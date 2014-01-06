@@ -1,0 +1,161 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Game</title>
+	<link rel="stylesheet" href="style/main.css">
+	<script type="text/javascript" src="script/jquery-2.0.3.min.js"></script>
+	<!--====================Include socket file======================-->
+	<script src="http://127.0.0.1:8080/socket.io/socket.io.js"></script>
+	<script src="script/gameClient.js"></script>
+	<script>
+	$(document).ready(function() {
+		url = document.URL;
+		pos = url.indexOf('?nick=');
+		nick = url.slice(pos+6, url.length);
+		document.getElementById('hey').innerHTML=nick;
+		gameArea = document.getElementById('gameContainer');
+		game = gameArea.getContext("2d");
+		width = gameArea.width;
+		height = gameArea.height;
+		FPS = 30;
+		speed = 10;
+		//	BASIC PLAYER CHARACTERISTICS
+		player = {
+			width: 10,
+			height: 100,
+		}
+		//	PLAYER 1 STARTING POSITIONS
+		player1 = {
+			posX: 0,
+			posY: 200,
+		};
+		//	PLAYER 2 STARTING POSITIONS
+		player2 = {
+			posX: 990,
+			posY: 200,
+		};
+		maxBallSpeed = 5;
+		ball = {
+			posX: (width/2),
+			posY: (height/2),
+			radius: 10,
+			speedX: Math.random()*maxBallSpeed,
+			speedY: Math.random()*maxBallSpeed,
+		};
+		if(Math.random() < 0.5) {
+			dirX = -1;
+		}
+		else {
+			dirX = 1;
+		}
+		if(Math.random() < 0.5) {
+			dirY = -1;
+		}
+		else {
+			dirY = 1;
+		}
+		//	CHECK WHETHER BOTH THE PLAYERS HAVE CONNECTED
+		gameCheck = 0;
+		//	INITIAL GAME DRAW
+		draw();
+		gameLoop = setInterval(gameLoopInit, 1000/FPS);
+		function gameLoopInit() {
+			if(gameCheck == 1) {
+				clearInterval(gameLoop);
+				gameLoop = setInterval(draw, 1000/FPS);
+			}
+		}
+		connectToServer();
+		//	GAME LOOP DRAW FUNCTION
+		function draw() {
+			//Set the game background color
+			game.fillStyle = "#789ABC";
+			game.fillRect(0,0,width,height);
+			//Create the two players
+			game.fillStyle = "#000";
+			game.fillRect(player1.posX, player1.posY, player.width, player.height);
+			game.fillRect(player2.posX, player2.posY, player.width, player.height);
+			console.log("draw");
+			game.beginPath();
+			game.arc(ball.posX, ball.posY, ball.radius, 0, Math.PI*2, false); 
+			game.closePath();
+			game.fill();
+			updateBall();
+		}
+		//	GAME LOOP UPDATES BALL POSITION
+		function updateBall() {
+			if(dirX == 1) {
+				ball.posX += ball.speedX;
+			}
+			else if(dirX == -1) {
+				ball.posX -= ball.speedX;
+			}
+			if(dirY == 1) {
+				ball.posY += ball.speedY;
+			}
+			else if(dirY == -1) {
+				ball.posY -= ball.speedY;
+			}
+			if(ball.posY > (height - ball.radius)) {
+				dirY = -1;
+			}
+			else if(ball.posY < ball.radius) {
+				dirY = 1;
+			}
+			else if(ball.posX > (width - ball.radius/2 - player.width/2)) {
+				if(ball.posY >= (player2.posY - ball.radius/2) && ball.posY <= (player2.posY + player.height + ball.radius/2)) {
+					dirX = -1;
+				}
+				else {
+					clearInterval(gameLoop);
+					alert("Player 1 wins!");
+				}
+			}
+			else if(ball.posX < (ball.radius/2 + player.width/2)) {
+				if(ball.posY >= (player1.posY - ball.radius/2) && ball.posY <= (player1.posY + player.height + ball.radius/2)) {
+					dirX = 1;
+				}
+				else {
+					clearInterval(gameLoop);
+					alert("Player 2 wins!");
+				}
+			}
+		}
+		//	SENDS MESSAGE TO SERVER WHEN KEY IS PRESSED
+		$(document).keydown(function(e) {
+			if(e.keyCode == 38) {
+				if(playerid == 1) {
+					if(player1.posY > 0) {
+						socket.emit('movePlayer', { player: 'player1', pos: 'negY' });
+					}
+				}
+				else if(playerid == 2) {
+					if(player2.posY > 0) {
+						socket.emit('movePlayer', { player: 'player2', pos: 'negY' });
+					}
+				}
+			}
+			else if(e.keyCode == 40) {
+				if(playerid == 1) {
+					if(player1.posY < (height - player.height)) {
+						socket.emit('movePlayer', { player: 'player1', pos: 'posY' });
+					}
+				}
+				else if(playerid == 2) {
+					if(player2.posY < (height - player.height)) {
+						socket.emit('movePlayer', { player: 'player2', pos: 'posY' });
+					}
+				}
+			}
+		});
+	});
+	</script>
+</head>
+<body>
+	<div id="container">
+		<h2>Welcome <span id="hey"></span></h2>
+		<h3><span id="playernum"></span></h3>
+		<canvas id="gameContainer" width="1000" height="500"></canvas>
+	</div>
+</body>
+</html>

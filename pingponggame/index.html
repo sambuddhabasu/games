@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Index</title>
+	<link rel="stylesheet" href="style/main.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+	<script>
+	function submitnick() {
+		var nick = document.getElementById('nick').value;
+		window.location.href="game.html?nick=" + nick;
+	}
+	</script>
+</head>
+<body>
+	<div id="container">
+		<table>
+			<tr>
+				<td>Enter nickname: </td>
+				<td><input type="text" name="nick" id="nick"></input></td>
+				<td><input type="submit" id="submitnick" name="submitnick" onClick="submitnick();"></input></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
